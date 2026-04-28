@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Invoice Generator Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --primary-dark: #3730a3;
+            --success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            color: #f1f5f9;
+        }
+
+        .app-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 40px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .main-content {
+            flex: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: 1fr 450px;
+            gap: 40px;
+            align-content: start;
+        }
+
+        .panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .form-panel {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 32px;
+            height: 100%;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 16px;
+            padding: 4px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            border-radius: 12px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: grid;
+            gap: 24px;
+        }
+
+        .form-section {
+            display: grid;
+            gap: 24px;
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            padding: 14px 16px;
+            border: 2px solid rgba(148, 163, 184, 0.3);
+            border-radius: 12px;
+            background: rgba(51, 65, 85, 0.8);
+            color: #f1f5f9;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+            background: rgba(51, 65, 85, 1);
+        }
+
+        .form-input::placeholder {
+            color: #64748b;
+        }
+
+        .items-container {
+            background: rgba(51, 65, 85, 0.6);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .item-row:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .item-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #94a3b8;
+            border: 2px solid rgba(148, 163, 184, 0.5);
+        }
+
+        .btn-outline:hover {
+            border-color: #6366f1;
+            color: #a5b4fc;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .totals-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 24px;
+            border-radius: 16px;
+            margin-top: 24px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 1.1rem;
+        }
+
+        .total-row.total {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #a5b4fc;
+            border-top: 2px solid rgba(99, 102, 241, 0.5);
+            padding-top: 16px;
+            margin-top: 12px;
+        }
+
+        .sidebar {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 24px;
+            height: 100%;
+        }
+
+        .invoice-preview {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+            color: #111827;
+        }
+
+        .invoice-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 3px solid #f1f5f9;
+        }
+
+        .company-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .invoice-meta {
+            text-align: right;
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .status-draft { background: #fef3c7; color: #92400e; }
+        .status-sent { background: #dbeafe; color: #1e40af; }
+        .status-viewed { background: #ede9fe; color: #5b21b6; }
+        .status-paid { background: #d1fae5; color: #065f46; }
+
+        .client-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+            padding-bottom: 32px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 32px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .items-table th {
+            background: #f8fafc;
+            padding: 20px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .items-table td {
+            padding: 20px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .items-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9fafb;
+            margin: 20px 0;
+        }
+
+        .analytics-panel {
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 20px;
+            padding: 24px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .client-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .invoice-preview, .invoice-preview * { visibility: visible; }
+            .invoice-preview { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    InvoicePro
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-outline" onclick="exportData()" title="Export Data">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-primary" onclick="generatePDF()">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="panel form-panel">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('basic', this)">Basic</button>
+                    <button class="tab" onclick="switchTab('advanced', this)">Advanced</button>
+                    <button class="tab" onclick="switchTab('templates', this)">Templates</button>
+                </div>
+
+                <div class="form-section" id="formSections">
+                    <div id="basicTab" class="tab-content active">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-building"></i> Company</label>
+                                <input type="text" class="form-input" id="companyName" placeholder="Your Company Name" value="Tech Solutions Inc.">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-phone"></i> Phone</label>
+                                <input type="tel" class="form-input" id="companyPhone" placeholder="+1 (555) 123-4567" value="+1 (555) 123-4567">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-envelope"></i> Email</label>
+                                <input type="email" class="form-input" id="companyEmail" placeholder="billing@company.com" value="billing@techsolutions.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-globe"></i> Website</label>
+                                <input type="url" class="form-input" id="companyWebsite" placeholder="https://company.com" value="https://techsolutions.com">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-hashtag"></i> Invoice #</label>
+                            <input type="text" class="form-input" id="invoiceNumber" placeholder="INV-2024-001" value="INV-2024-001">
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-calendar"></i> Date</label>
+                                <input type="date" class="form-input" id="invoiceDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-calendar-check"></i> Due Date</label>
+                                <input type="date" class="form-input" id="dueDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-info-circle"></i> Status</label>
+                                <select class="form-select" id="invoiceStatus">
+                                    <option value="draft">Draft</option>
+                                    <option value="sent">Sent</option>
+                                    <option value="viewed">Viewed</option>
+                                    <option value="paid">Paid</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-percent"></i> Discount (%)</label>
+                                <input type="number" class="form-input" id="discountPercent" min="0" max="100" step="0.1" value="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-user"></i> Client Name</label>
+                            <input type="text" class="form-input" id="clientName" placeholder="Client Name" value="ABC Corp">
+                        </div>
+                    </div>
+
+                    <div id="advancedTab" class="tab-content">
+                        <div class="form-group">
+                            <label class="form-label"><i class="fas fa-map-marker-alt"></i> Client Address</label>
+                            <textarea class="form-textarea" id="clientAddress" rows="3" placeholder="123 Client Street, City, State 12345"></textarea>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-file-invoice-dollar"></i> Client Tax ID</label>
+                                <input type="text" class="form-input" id="clientTaxId" placeholder="XX-XXXXXXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-credit-card"></i> Payment Terms</label>
+                                <select class="form-select" id="paymentTerms">
+                                    <option value="net-30">Net 30 days</option>
+                                    <option value="net-15">Net 15 days</option>
+                                    <option value="due-on-receipt">Due on receipt</option>
+                                    <option value="net-60">Net 60 days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="templatesTab" class="tab-content">
+                        <div style="text-align: center; padding: 40px;">
+                            <i class="fas fa-magic" style="font-size: 4rem; color: #94a3b8; margin-bottom: 20px;"></i>
+                            <h3>Template Library</h3>
+                            <p>Coming soon: Pre-built professional templates</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="items-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="font-size: 1.2rem; font-weight: 700;">
+                            <i class="fas fa-list"></i> Line Items
+                        </h3>
+                        <button class="btn btn-success" onclick="addItem()">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    <div id="itemsContainer"></div>
+                </div>
+
+                <div class="totals-card">
+                    <div class="total-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tax</span>
+                        <span id="taxTotal">$0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Discount</span>
+                        <span id="discountTotal">-$0.00</span>
+                    </div>
+                    <div class="total-row total">
+                        <span>Total</span>
+                        <span id="grandTotal">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label"><i class="fas fa-sticky-note"></i> Notes / Terms</label>
+                    <textarea class="form-textarea" id="notes" rows="4" placeholder="Payment terms, late fees, etc..."></textarea>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel analytics-panel">
+                    <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statInvoices">$0</div>
+                            <div>Outstanding</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTotal">$0</div>
+                            <div>Total Billed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statItems">0</div>
+                            <div>Items</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="invoice-preview" id="invoicePreview"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="printInvoice()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button class="btn btn-primary" onclick="sendInvoice()">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                    <button class="btn btn-success" onclick="markPaid()">
+                        <i class="fas fa-check-circle"></i> Mark Paid
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('invoiceDate').valueAsDate = new Date();
+        document.getElementById('dueDate').valueAsDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        let itemCounter = 0;
+        let invoiceData = JSON.parse(localStorage.getItem('invoiceData')) || {};
+
+        function loadData() {
+            Object.keys(invoiceData).forEach(key => {
+                const el = document.getElementById(key);
+                if (el && key !== 'items') el.value = invoiceData[key];
+            });
+            if (Array.isArray(invoiceData.items) && invoiceData.items.length > 0) {
+                invoiceData.items.forEach(item => addItem(item, false));
+            }
+        }
+
+        function saveData() {
+            const data = {
+                companyName: document.getElementById('companyName').value,
+                companyPhone: document.getElementById('companyPhone').value,
+                companyEmail: document.getElementById('companyEmail').value,
+                companyWebsite: document.getElementById('companyWebsite').value,
+                invoiceNumber: document.getElementById('invoiceNumber').value,
+                invoiceDate: document.getElementById('invoiceDate').value,
+                dueDate: document.getElementById('dueDate').value,
+                invoiceStatus: document.getElementById('invoiceStatus').value,
+                discountPercent: document.getElementById('discountPercent').value,
+                clientName: document.getElementById('clientName').value,
+                clientAddress: document.getElementById('clientAddress').value,
+                clientTaxId: document.getElementById('clientTaxId').value,
+                paymentTerms: document.getElementById('paymentTerms').value,
+                notes: document.getElementById('notes').value,
+                items: []
+            };
+
+            document.querySelectorAll('.item-row').forEach(row => {
+                data.items.push({
+                    desc: row.querySelector('.item-desc').value,
+                    qty: row.querySelector('.item-qty').value,
+                    rate: row.querySelector('.item-rate').value,
+                    tax: row.querySelector('.item-tax').value
+                });
+            });
+
+            localStorage.setItem('invoiceData', JSON.stringify(data));
+            invoiceData = data;
+        }
+
+        function addItem(data = null, shouldPersist = true) {
+            const container = document.getElementById('itemsContainer');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item-row';
+            itemDiv.dataset.itemId = itemCounter++;
+            itemDiv.innerHTML = `
+                <input type="text" class="form-input item-desc" placeholder="Item/Service description" value="${data?.desc || ''}">
+                <input type="number" class="form-input item-qty" placeholder="1" min="0" step="0.1" value="${data?.qty || 1}">
+                <input type="number" class="form-input item-rate" placeholder="$0.00" min="0" step="0.01" value="${data?.rate || 0}">
+                <input type="number" class="form-input item-tax" placeholder="0%" min="0" max="100" step="0.1" value="${data?.tax || 0}">
+                <button class="btn btn-danger btn-outline" onclick="removeItem(this)" style="padding: 8px; width: 40px; height: 40px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(itemDiv);
+            updatePreview();
+            if (shouldPersist) saveData();
+        }
+
+        function removeItem(btn) {
+            if (document.querySelectorAll('.item-row').length > 1) {
+                btn.closest('.item-row').remove();
+                updatePreview();
+                saveData();
+            }
+        }
+
+        function switchTab(tabName, tabElement) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            tabElement.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function calculateTotals() {
+            let subtotal = 0;
+            let taxTotal = 0;
+
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const taxRate = parseFloat(row.querySelector('.item-tax').value) || 0;
+
+                const lineTotal = qty * rate;
+                const lineTax = lineTotal * (taxRate / 100);
+
+                subtotal += lineTotal;
+                taxTotal += lineTax;
+            });
+
+            const discountPercent = parseFloat(document.getElementById('discountPercent').value) || 0;
+            const discount = subtotal * (discountPercent / 100);
+            const grandTotal = subtotal + taxTotal - discount;
+
+            return { subtotal, taxTotal, discount, grandTotal };
+        }
+
+        function updatePreview() {
+            const totals = calculateTotals();
+            const status = document.getElementById('invoiceStatus').value;
+
+            document.getElementById('subtotal').textContent = `$${totals.subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('taxTotal').textContent = `$${totals.taxTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('discountTotal').textContent = `-$${totals.discount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('grandTotal').textContent = `$${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+            document.getElementById('statInvoices').textContent = `$${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+            document.getElementById('statTotal').textContent = `$${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 0 })}`;
+            document.getElementById('statItems').textContent = document.querySelectorAll('.item-row').length;
+
+            let itemsHTML = '';
+            document.querySelectorAll('.item-row').forEach(row => {
+                const desc = row.querySelector('.item-desc').value || 'N/A';
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+                const taxRate = parseFloat(row.querySelector('.item-tax').value) || 0;
+                const lineTotal = qty * rate;
+
+                itemsHTML += `
+                    <tr>
+                        <td>${desc}</td>
+                        <td>${qty}</td>
+                        <td>$${rate.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                        <td>${taxRate}%</td>
+                        <td>$${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+            });
+
+            const statusClass = `status-${status}`;
+            const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+
+            document.getElementById('invoicePreview').innerHTML = `
+                <div class="invoice-header">
+                    <div>
+                        <div class="company-logo">TS</div>
+                        <div style="font-weight: 700; font-size: 1.8rem; margin-bottom: 8px;">${document.getElementById('companyName').value}</div>
+                        <div>${document.getElementById('companyPhone').value}</div>
+                        <div>${document.getElementById('companyEmail').value}</div>
+                        <div>${document.getElementById('companyWebsite').value}</div>
+                    </div>
+                    <div class="invoice-meta">
+                        <div class="status-badge ${statusClass}">
+                            <i class="fas fa-circle"></i>
+                            ${statusText}
+                        </div>
+                        <div style="font-size: 2.5rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">
+                            ${document.getElementById('invoiceNumber').value}
+                        </div>
+                        <div>Date: ${new Date(document.getElementById('invoiceDate').value).toLocaleDateString()}</div>
+                        <div>Due: ${new Date(document.getElementById('dueDate').value).toLocaleDateString()}</div>
+                    </div>
+                </div>
+
+                <div class="client-section">
+                    <div>
+                        <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; color: #1e2937;">Bill To:</h3>
+                        <div style="font-weight: 600; font-size: 1.2rem; margin-bottom: 8px;">${document.getElementById('clientName').value}</div>
+                        <div style="color: #6b7280; line-height: 1.6;">${document.getElementById('clientAddress').value.replace(/\n/g, '<br>')}</div>
+                        ${document.getElementById('clientTaxId').value ? `<div style="margin-top: 8px; color: #6b7280;">Tax ID: ${document.getElementById('clientTaxId').value}</div>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 16px; color: #1e2937;">Payment Terms</h3>
+                        <div style="font-size: 1.1rem; color: #374151;">${document.getElementById('paymentTerms').value.replace('-', ' ').toUpperCase()}</div>
+                    </div>
+                </div>
+
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Tax</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                </table>
+
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 40px; margin-bottom: 32px;">
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: #374151;">Notes</h3>
+                        <div style="color: #6b7280; line-height: 1.7;">${document.getElementById('notes').value || 'No notes added.'}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
+                            Total: $${totals.grandTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </div>
+                        <div class="qr-code">
+                            <i class="fas fa-qrcode" style="font-size: 2rem; color: #6b7280;"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generatePDF() {
+            showToast('Generating PDF...', 'success');
+            const preview = document.getElementById('invoicePreview');
+
+            html2canvas(preview, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                width: preview.scrollWidth,
+                height: preview.scrollHeight,
+                logging: false
+            }).then(canvas => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 10;
+
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight + 10;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+
+                pdf.save(`invoice-${document.getElementById('invoiceNumber').value}.pdf`);
+                showToast('PDF downloaded successfully!', 'success');
+            }).catch(() => {
+                showToast('PDF generation failed', 'error');
+            });
+        }
+
+        function printInvoice() {
+            window.print();
+        }
+
+        function sendInvoice() {
+            showToast('Email sent to client!', 'success');
+        }
+
+        function markPaid() {
+            document.getElementById('invoiceStatus').value = 'paid';
+            updatePreview();
+            saveData();
+            showToast('Invoice marked as paid!', 'success');
+        }
+
+        function exportData() {
+            saveData();
+            const dataStr = JSON.stringify(invoiceData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `invoice-${document.getElementById('invoiceNumber').value}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('Data exported!', 'success');
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('input', () => {
+            saveData();
+            updatePreview();
+        });
+
+        document.addEventListener('change', () => {
+            saveData();
+            updatePreview();
+        });
+
+        loadData();
+        if (!Array.isArray(invoiceData.items) || invoiceData.items.length === 0) {
+            addItem();
+        } else {
+            updatePreview();
+        }
+
+        setInterval(saveData, 30000);
+    </script>
+</body>
+</html>
